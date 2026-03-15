@@ -385,13 +385,13 @@ export default function Leaderboard({
                       transition: ROW_T,
                     }}
                   >
-                    <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease` }}>
+                    <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
                       {String(entry.rank).padStart(2, "0")}
                     </span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {entry.user_name}
                     </span>
-                    <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease` }}>
+                    <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
                       {entry.aggregate.toFixed(1)}
                       <span style={{ color: c.textFaint, transition: T }}>/{maxAggregate}</span>
                     </span>
@@ -525,8 +525,14 @@ export default function Leaderboard({
                   setPageFade(false);
                   setTimeout(() => {
                     setPage((page + 1) % totalPages);
-                    setPageFade(true);
-                  }, 200);
+                    // New content renders with pageFade still false (opacity 0)
+                    // Then fade it in on next frame
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        setPageFade(true);
+                      });
+                    });
+                  }, 300);
                 }}
                 style={{
                   flex: 1,
