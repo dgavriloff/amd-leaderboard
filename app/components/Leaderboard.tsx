@@ -57,7 +57,7 @@ const themes = {
   },
 };
 
-const T = "background-color 300ms, color 300ms, border-color 300ms";
+const T = "background-color 600ms, color 600ms, border-color 600ms";
 
 function GlassCard({
   children,
@@ -77,7 +77,8 @@ function GlassCard({
         borderBottom: `1px solid ${c.border}`,
         borderLeft: `1px solid ${c.border}`,
         borderRight: `1px solid ${c.border}`,
-        borderRadius: 2,
+        borderRadius: 12,
+        overflow: "hidden",
         ...style,
       }}
     >
@@ -330,7 +331,7 @@ export default function Leaderboard({
               }}
             >
               <span style={{ width: 40, textAlign: "center", flexShrink: 0 }}>#</span>
-              <span style={{ flex: 1 }}>Player</span>
+              <span style={{ flex: 1 }}>Competitor</span>
               <span style={{ width: 96, textAlign: "right" }}>Score</span>
             </div>
 
@@ -580,7 +581,7 @@ export default function Leaderboard({
                         onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
                         onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
                       >
-                        {p.name} &rsaquo;
+                        {p.name} ↗
                       </a>
                       {detail ? (
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
@@ -628,7 +629,7 @@ export default function Leaderboard({
         zIndex: 1,
       }}>
         <div style={{ width: isMobile ? "calc(100vw + 2px)" : 450 }}>
-          <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined }}>
+          <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
             <div style={{ padding: "14px 16px 10px 16px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T }}>
                 <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Leaderboard
@@ -652,7 +653,7 @@ export default function Leaderboard({
         zIndex: 1,
       }}>
         <div style={{ width: isMobile ? "calc(100vw + 2px)" : 450 }}>
-          <GlassCard c={c} ready={ready} style={{ borderBottom: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined }}>
+          <GlassCard c={c} ready={ready} style={{ borderBottom: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
             <div style={{
               display: "flex",
               justifyContent: "center",
@@ -730,7 +731,8 @@ export default function Leaderboard({
           borderBottom: `1px solid ${c.border}`,
           borderLeft: `1px solid ${c.border}`,
           borderRight: `1px solid ${c.border}`,
-          borderRadius: 2,
+          borderRadius: 12,
+          overflow: "hidden",
           transition: T,
         }}>
               <div style={{ display: "flex", alignItems: "stretch", borderBottom: `1px solid ${c.separator}`, transition: T }}>
