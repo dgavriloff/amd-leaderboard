@@ -368,8 +368,8 @@ export default function Leaderboard({
                       setSelectedIndex(isSelected ? null : idx);
                       if (isSelected) setHovered(null);
                     }}
-                    onMouseEnter={() => setHovered(entry.user_name)}
-                    onMouseLeave={() => { setHovered(null); setPressed(null); }}
+                    onMouseEnter={() => { if (!isMobile) setHovered(entry.user_name); }}
+                    onMouseLeave={() => { if (!isMobile) { setHovered(null); setPressed(null); } }}
                     onMouseDown={() => setPressed(entry.user_name)}
                     onMouseUp={() => setPressed(null)}
                     onTouchStart={() => setPressed(entry.user_name)}
@@ -656,9 +656,9 @@ export default function Leaderboard({
         justifyContent: "center",
         zIndex: 1,
       }}>
-        <div style={{ width: isMobile ? "calc(100vw + 2px)" : 450 }}>
+        <div style={{ width: isMobile ? "calc(100vw - 24px)" : 450 }}>
           <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-            <div style={{ padding: "calc(14px + env(safe-area-inset-top, 0px)) 16px 10px 16px" }}>
+            <div style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T }}>
                 <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Leaderboard
               </div>
@@ -680,7 +680,7 @@ export default function Leaderboard({
         justifyContent: "center",
         zIndex: 1,
       }}>
-        <div style={{ width: isMobile ? "calc(100vw + 2px)" : 450 }}>
+        <div style={{ width: isMobile ? "calc(100vw - 24px)" : 450 }}>
           <GlassCard c={c} ready={ready} style={{ borderBottom: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
             <div style={{
               display: "flex",
@@ -725,7 +725,7 @@ export default function Leaderboard({
               fontSize: 9,
               fontWeight: 700,
               color: c.textFaint,
-              padding: "0 16px calc(8px + env(safe-area-inset-bottom, 0px)) 16px",
+              padding: "0 16px max(8px, env(safe-area-inset-bottom)) 16px",
               transition: T,
             }}>
               This website and its creator have no official affiliation with GPU MODE or AMD.
