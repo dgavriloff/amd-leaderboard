@@ -441,7 +441,7 @@ export default function Leaderboard({
             {/* Toggle buttons */}
             <div style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${c.separator}`, transition: T }}>
               <button
-                onClick={() => { setHideUnder5us(!hideUnder5us); setSelectedIndex(null); setHovered(null); setCloseHovered(false); }}
+                onClick={() => setHideUnder5us(!hideUnder5us)}
                 style={{
                   flex: 1,
                   padding: "8px 0",
