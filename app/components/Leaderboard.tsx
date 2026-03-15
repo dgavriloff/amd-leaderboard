@@ -145,6 +145,7 @@ export default function Leaderboard({
   }, []);
 
   const [page, setPage] = useState(0);
+  const [pageFade, setPageFade] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
   const [closeHovered, setCloseHovered] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
@@ -336,7 +337,7 @@ export default function Leaderboard({
             </div>
 
             {/* Rows */}
-            <div style={{ minHeight: PAGE_SIZE * 41 }}>
+            <div style={{ minHeight: PAGE_SIZE * 41, opacity: pageFade ? 1 : 0, transition: "opacity 200ms ease" }}>
             {entries.map((entry, idx) => {
               const isSelected = effectiveIndex === idx;
               const isHovered = hovered === entry.user_name;
@@ -506,7 +507,13 @@ export default function Leaderboard({
                 )}
               </button>
               <button
-                onClick={() => setPage((page + 1) % totalPages)}
+                onClick={() => {
+                  setPageFade(false);
+                  setTimeout(() => {
+                    setPage((page + 1) % totalPages);
+                    setPageFade(true);
+                  }, 200);
+                }}
                 style={{
                   flex: 1,
                   padding: "8px 0",
