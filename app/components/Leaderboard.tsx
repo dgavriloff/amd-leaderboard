@@ -305,23 +305,25 @@ export default function Leaderboard({
                   const detail = selectedEntry.problems[p.name];
                   return (
                     <div key={p.name}>
-                      <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, transition: T }}>
+                      <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, transition: T }}>
                         {p.name}
                       </div>
                       {detail ? (
-                        <>
-                          <div style={{ fontSize: 14, color: c.text, fontWeight: 700, fontVariantNumeric: "tabular-nums", transition: T }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
+                          <span style={{ fontSize: 12, color: c.text, transition: T }}>
+                            #{detail.rank}
+                          </span>
+                          <span style={{ color: c.borderLight, transition: T }}>|</span>
+                          <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>
                             {formatTime(detail.time)}
-                          </div>
-                          <div style={{ fontSize: 11, color: c.textMuted, marginTop: 2, fontVariantNumeric: "tabular-nums", transition: T }}>
-                            rank {detail.rank}
-                            <span style={{ color: c.textFaint, marginLeft: 8, transition: T }}>
-                              {detail.points.toFixed(1)} pts
-                            </span>
-                          </div>
-                        </>
+                          </span>
+                          <span style={{ color: c.borderLight, transition: T }}>|</span>
+                          <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>
+                            {detail.points.toFixed(1)}
+                          </span>
+                        </div>
                       ) : (
-                        <div style={{ fontSize: 14, color: c.textFaint, transition: T }}>---</div>
+                        <div style={{ fontSize: 12, color: c.textFaint, transition: T }}>---</div>
                       )}
                     </div>
                   );
