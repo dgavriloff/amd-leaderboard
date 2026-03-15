@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Trophy cup -->
+  <path d="M8 4h16v2h-16z" fill="white"/>
+  <path d="M9 6h14v10c0 4-3 7-7 7s-7-3-7-7z" fill="white"/>
+  <!-- Left handle -->
+  <path d="M5 7h4v2h-3v4c0 1.5 1 2.5 2.5 3h-1c-2 0-3.5-2-3.5-4v-3c0-1 .5-2 1-2z" fill="white"/>
+  <!-- Right handle -->
+  <path d="M23 7h4c.5 0 1 1 1 2v3c0 2-1.5 4-3.5 4h-1c1.5-.5 2.5-1.5 2.5-3v-4h-3z" fill="white"/>
+  <!-- Stem -->
+  <path d="M14 23h4v3h-4z" fill="white"/>
+  <!-- Base -->
+  <path d="M10 26h12v2h-12z" fill="white"/>
+</svg>
