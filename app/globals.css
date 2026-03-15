@@ -2,10 +2,11 @@
 
 :root {
   --background: #0f1114;
-  --foreground: #e0e0e0;
-  --border: #2a2e35;
+  --foreground: #d4d4d4;
+  --border: #252525;
   --accent: #5eead4;
-  --muted: #6b7280;
+  --muted: #555;
+  --surface: #161819;
 }
 
 @theme inline {
@@ -14,6 +15,7 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-muted: var(--muted);
+  --color-surface: var(--surface);
   --font-sans: var(--font-geist-mono);
   --font-mono: var(--font-geist-mono);
 }
