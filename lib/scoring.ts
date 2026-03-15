@@ -13,7 +13,7 @@ export interface ProblemConfig {
 }
 
 export interface ProblemDetail {
-  rank: number; // 0-indexed rank used in formula
+  rank: number; // 1-indexed display rank
   time: number; // raw runtime from API
   points: number;
 }
@@ -26,6 +26,18 @@ export interface AggregateEntry {
   latestSubmission: string;
 }
 
+export interface SkippedEntry {
+  user_name: string;
+  problem: string;
+  time: number;
+  originalRank: number;
+}
+
+export interface LeaderboardResult {
+  entries: AggregateEntry[];
+  skipped: SkippedEntry[];
+}
+
 const PROBLEMS: ProblemConfig[] = [
   { id: 763, name: "MXFP4 GEMM", maxPoints: 1000 },
   { id: 765, name: "MLA Decode", maxPoints: 1250 },
@@ -33,6 +45,7 @@ const PROBLEMS: ProblemConfig[] = [
 ];
 
 const TOP_N = 20;
+const MIN_TIME = 5e-6; // 5 microseconds
 
 async function fetchLeaderboard(id: number): Promise<RankingEntry[]> {
   const res = await fetch(`https://www.gpumode.com/api/leaderboard/${id}`, {
@@ -44,28 +57,56 @@ async function fetchLeaderboard(id: number): Promise<RankingEntry[]> {
   }
 
   const json = await res.json();
-  const rankings: RankingEntry[] = json.data.rankings.MI355X ?? [];
-
-  return rankings.filter((e) => e.rank <= TOP_N);
+  return json.data.rankings.MI355X ?? [];
 }
 
 interface ProblemResult {
   config: ProblemConfig;
   entries: RankingEntry[];
+  skipped: SkippedEntry[];
 }
 
 export async function fetchAllLeaderboards(): Promise<ProblemResult[]> {
-  return Promise.all(
+  const raw = await Promise.all(
     PROBLEMS.map(async (p) => ({
       config: p,
-      entries: await fetchLeaderboard(p.id),
+      allEntries: await fetchLeaderboard(p.id),
     }))
   );
+
+  return raw.map(({ config, allEntries }) => {
+    const skipped: SkippedEntry[] = [];
+    const valid: RankingEntry[] = [];
+
+    for (const entry of allEntries) {
+      if (entry.score < MIN_TIME) {
+        skipped.push({
+          user_name: entry.user_name,
+          problem: config.name,
+          time: entry.score,
+          originalRank: entry.rank,
+        });
+      } else {
+        valid.push(entry);
+      }
+    }
+
+    // Re-rank valid entries by score ascending (fastest first)
+    valid.sort((a, b) => a.score - b.score);
+    const reranked = valid.slice(0, TOP_N).map((e, i) => ({
+      ...e,
+      rank: i + 1, // 1-indexed
+    }));
+
+    return { config, entries: reranked, skipped };
+  });
 }
 
 export function calculateAggregateScores(
   problems: ProblemResult[]
-): AggregateEntry[] {
+): LeaderboardResult {
+  const allSkipped = problems.flatMap((p) => p.skipped);
+
   // Build map: user_name -> { problemName -> best entry }
   const userEntries = new Map<
     string,
@@ -96,11 +137,12 @@ export function calculateAggregateScores(
     for (const name of problemNames) {
       const data = scoreMap.get(name);
       if (data) {
-        // API rank is 1-indexed, formula rank is 0-indexed
-        const formulaRank = data.entry.rank - 1;
+        // Display rank is 1-indexed, formula uses 0-indexed (rank - 1)
+        const displayRank = data.entry.rank;
+        const formulaRank = displayRank - 1;
         const pts = data.config.maxPoints * (1 - formulaRank / TOP_N);
         problemDetails[name] = {
-          rank: formulaRank,
+          rank: displayRank,
           time: data.entry.score,
           points: pts,
         };
@@ -127,10 +169,12 @@ export function calculateAggregateScores(
     return a.latestSubmission.localeCompare(b.latestSubmission);
   });
 
-  return aggregates.slice(0, 10).map((entry, i) => ({
+  const entries = aggregates.slice(0, 10).map((entry, i) => ({
     ...entry,
     rank: i + 1,
   }));
+
+  return { entries, skipped: allSkipped };
 }
 
 export function getProblemConfigs(): ProblemConfig[] {

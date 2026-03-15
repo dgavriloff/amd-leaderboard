@@ -9,7 +9,7 @@ export const revalidate = 60;
 
 export default async function Home() {
   const problems = await fetchAllLeaderboards();
-  const entries = calculateAggregateScores(problems);
+  const { entries, skipped } = calculateAggregateScores(problems);
   const problemConfigs = getProblemConfigs();
   const fetchedAt = new Date().toLocaleString("en-US", {
     timeZone: "UTC",
@@ -58,6 +58,7 @@ export default async function Home() {
         <Leaderboard
           entries={entries}
           problemConfigs={problemConfigs}
+          skipped={skipped}
           fetchedAt={fetchedAt}
         />
       </main>
