@@ -344,7 +344,7 @@ export default function Leaderboard({
             </div>
 
             {/* Rows */}
-            <div style={{ minHeight: PAGE_SIZE * 41, opacity: pageFade ? 1 : 0, transition: "opacity 200ms ease" }}>
+            <div style={{ minHeight: PAGE_SIZE * 41 }}>
             {entries.map((entry, idx) => {
               const isSelected = effectiveIndex === idx;
               const isHovered = hovered === entry.user_name;
@@ -385,13 +385,13 @@ export default function Leaderboard({
                       transition: ROW_T,
                     }}
                   >
-                    <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, transition: T }}>
+                    <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease` }}>
                       {String(entry.rank).padStart(2, "0")}
                     </span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, transition: T, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {entry.user_name}
                     </span>
-                    <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", transition: T }}>
+                    <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 200ms ease` }}>
                       {entry.aggregate.toFixed(1)}
                       <span style={{ color: c.textFaint, transition: T }}>/{maxAggregate}</span>
                     </span>
