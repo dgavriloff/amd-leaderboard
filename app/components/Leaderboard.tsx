@@ -58,6 +58,7 @@ const themes = {
 };
 
 const T = "background-color 600ms, color 600ms, border-color 600ms";
+const ROW_T = "background-color 150ms, color 150ms, transform 100ms ease-out";
 
 function GlassCard({
   children,
@@ -79,6 +80,9 @@ function GlassCard({
         borderRight: `1px solid ${c.border}`,
         borderRadius: 12,
         overflow: "hidden",
+        transform: "translateZ(0)",
+        willChange: "transform",
+        contain: "layout style paint",
         ...style,
       }}
     >
@@ -93,6 +97,7 @@ function GlassCard({
           WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 50%)",
           pointerEvents: "none",
           zIndex: 0,
+          transform: "translateZ(0)",
         }}
       />
       <div
@@ -106,6 +111,7 @@ function GlassCard({
           WebkitBackdropFilter: "blur(4px) brightness(1.1)",
           pointerEvents: "none",
           zIndex: 0,
+          transform: "translateZ(0)",
         }}
       />
       <div
@@ -148,6 +154,8 @@ export default function Leaderboard({
   const [pageFade, setPageFade] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
   const [closeHovered, setCloseHovered] = useState(false);
+  const [pressed, setPressed] = useState<string | null>(null);
+  const [themeSwitching, setThemeSwitching] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [faqCloseHovered, setFaqCloseHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -311,8 +319,7 @@ export default function Leaderboard({
         zIndex: 1,
         display: "flex",
         alignItems: "flex-start",
-        gap: effectiveIndex !== null && !isMobile ? 12 : 0,
-        transition: "gap 300ms",
+        gap: 12,
       }}>
         {/* Leaderboard */}
         <div style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, userSelect: "none", overflow: "hidden" }}>
@@ -362,7 +369,11 @@ export default function Leaderboard({
                       if (isSelected) setHovered(null);
                     }}
                     onMouseEnter={() => setHovered(entry.user_name)}
-                    onMouseLeave={() => setHovered(null)}
+                    onMouseLeave={() => { setHovered(null); setPressed(null); }}
+                    onMouseDown={() => setPressed(entry.user_name)}
+                    onMouseUp={() => setPressed(null)}
+                    onTouchStart={() => setPressed(entry.user_name)}
+                    onTouchEnd={() => setPressed(null)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -370,7 +381,8 @@ export default function Leaderboard({
                       cursor: "pointer",
                       background: isSelected ? c.glassActive : isHovered ? c.glassHover : "transparent",
                       borderBottom: (!isLast && !showDrawer) ? `1px solid ${c.separator}` : "none",
-                      transition: T,
+                      transform: pressed === entry.user_name ? "scale(0.985)" : "scale(1)",
+                      transition: ROW_T,
                     }}
                   >
                     <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, transition: T }}>
@@ -389,7 +401,7 @@ export default function Leaderboard({
                     <div style={{
                       maxHeight: isSelected ? 300 : 0,
                       overflow: "hidden",
-                      transition: "max-height 300ms ease",
+                      transition: "max-height 250ms ease-out",
                     }}>
                     <div style={{
                       padding: "12px 16px 12px 56px",
@@ -463,12 +475,14 @@ export default function Leaderboard({
               </button>
               <button
                 onClick={() => {
+                  if (themeSwitching) return;
+                  setThemeSwitching(true);
                   const next = !dark;
-                  // Pick a new bg for the theme we're leaving
                   if (dark) { setDarkBg(pick(darkImages)); }
                   else { setLightBg(pick(lightImages)); }
                   setDark(next);
                   localStorage.setItem("theme", next ? "dark" : "light");
+                  setTimeout(() => setThemeSwitching(false), 800);
                 }}
                 style={{
                   flex: 1,
@@ -540,9 +554,10 @@ export default function Leaderboard({
         {!isMobile && <div
           style={{
             flexShrink: 0,
-            overflow: "hidden",
-            transition: "width 300ms",
             width: effectiveIndex !== null ? 224 : 0,
+            overflow: "hidden",
+            opacity: effectiveIndex !== null ? 1 : 0,
+            transition: "width 300ms ease, opacity 250ms ease",
           }}
         >
           {displayEntry && (

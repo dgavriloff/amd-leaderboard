@@ -5,8 +5,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  transform: scale(0.96);
+  transition: transform 80ms ease-out;
+}
+
 body {
-  background: #fafafa;
-  color: #111;
+  background: #0f1114;
+  color: #d4d4d4;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
