@@ -309,7 +309,8 @@ export default function Leaderboard({
         zIndex: 1,
         display: "flex",
         alignItems: "flex-start",
-        gap: 12,
+        gap: effectiveIndex !== null && !isMobile ? 12 : 0,
+        transition: "gap 300ms",
       }}>
         {/* Leaderboard */}
         <div style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, userSelect: "none", overflow: "hidden" }}>
@@ -579,7 +580,7 @@ export default function Leaderboard({
                         onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
                         onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
                       >
-                        {p.name}
+                        {p.name} &rsaquo;
                       </a>
                       {detail ? (
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
@@ -705,22 +706,33 @@ export default function Leaderboard({
       </div>
 
       {/* FAQ Modal */}
-      {faqOpen && (
-        <div
-          onClick={() => setFaqOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: dark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-            padding: 12,
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 420 }}>
-            <GlassCard c={c} ready={ready}>
+      <div
+        onClick={() => setFaqOpen(false)}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: faqOpen ? (dark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.2)") : "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: faqOpen ? 50 : -1,
+          padding: 12,
+          opacity: faqOpen ? 1 : 0,
+          pointerEvents: faqOpen ? "auto" : "none",
+          transition: "opacity 300ms ease, background-color 300ms ease",
+        }}
+      >
+        <div onClick={(e) => e.stopPropagation()} style={{
+          width: "100%",
+          maxWidth: 420,
+          background: dark ? "rgba(20,20,20,0.92)" : "rgba(255,255,255,0.92)",
+          borderTop: `1px solid ${c.border}`,
+          borderBottom: `1px solid ${c.border}`,
+          borderLeft: `1px solid ${c.border}`,
+          borderRight: `1px solid ${c.border}`,
+          borderRadius: 2,
+          transition: T,
+        }}>
               <div style={{ display: "flex", alignItems: "stretch", borderBottom: `1px solid ${c.separator}`, transition: T }}>
                 <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: c.text, padding: "10px 16px", textTransform: "uppercase", letterSpacing: "0.05em", transition: T }}>
                   FAQ
@@ -803,16 +815,9 @@ export default function Leaderboard({
                     All benchmarks run on the AMD Instinct MI355X. Only MI355X rankings are shown.
                   </div>
                 </div>
-                <div style={{ borderTop: `1px solid ${c.separator}`, paddingTop: 16, marginTop: 4, transition: T }}>
-                  <div style={{ fontSize: 10, color: c.textFaint, lineHeight: 1.6, transition: T }}>
-                    This website and its creator have no official affiliation with GPU MODE.
-                  </div>
-                </div>
               </div>
-            </GlassCard>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* Loading overlay — covers everything, fades out once ready */}
       {!overlayDone && (
