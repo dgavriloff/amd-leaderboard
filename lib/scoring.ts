@@ -1,6 +1,6 @@
 export interface RankingEntry {
   user_name: string;
-  score: number; // runtime (geometric mean)
+  score: number;
   rank: number;
   submission_time: string;
   submission_count: number;
@@ -13,8 +13,8 @@ export interface ProblemConfig {
 }
 
 export interface ProblemDetail {
-  rank: number; // 1-indexed display rank
-  time: number; // raw runtime from API
+  rank: number;
+  time: number;
   points: number;
 }
 
@@ -26,16 +26,9 @@ export interface AggregateEntry {
   latestSubmission: string;
 }
 
-export interface SkippedEntry {
-  user_name: string;
-  problem: string;
-  time: number;
-  originalRank: number;
-}
-
-export interface LeaderboardResult {
-  entries: AggregateEntry[];
-  skipped: SkippedEntry[];
+export interface RawProblemData {
+  config: ProblemConfig;
+  entries: RankingEntry[];
 }
 
 const PROBLEMS: ProblemConfig[] = [
@@ -45,67 +38,47 @@ const PROBLEMS: ProblemConfig[] = [
 ];
 
 const TOP_N = 20;
-const MIN_TIME = 5e-6; // 5 microseconds
+const MIN_TIME = 5e-6;
 
 async function fetchLeaderboard(id: number): Promise<RankingEntry[]> {
   const res = await fetch(`https://www.gpumode.com/api/leaderboard/${id}`, {
     next: { revalidate: 60 },
   });
-
   if (!res.ok) {
     throw new Error(`Failed to fetch leaderboard ${id}: ${res.status}`);
   }
-
   const json = await res.json();
   return json.data.rankings.MI355X ?? [];
 }
 
-interface ProblemResult {
-  config: ProblemConfig;
-  entries: RankingEntry[];
-  skipped: SkippedEntry[];
-}
-
-export async function fetchAllLeaderboards(): Promise<ProblemResult[]> {
-  const raw = await Promise.all(
+export async function fetchAllLeaderboards(): Promise<RawProblemData[]> {
+  return Promise.all(
     PROBLEMS.map(async (p) => ({
       config: p,
-      allEntries: await fetchLeaderboard(p.id),
+      entries: await fetchLeaderboard(p.id),
     }))
   );
-
-  return raw.map(({ config, allEntries }) => {
-    const skipped: SkippedEntry[] = [];
-    const valid: RankingEntry[] = [];
-
-    for (const entry of allEntries) {
-      if (entry.score < MIN_TIME) {
-        skipped.push({
-          user_name: entry.user_name,
-          problem: config.name,
-          time: entry.score,
-          originalRank: entry.rank,
-        });
-      } else {
-        valid.push(entry);
-      }
-    }
-
-    // Re-rank valid entries by score ascending (fastest first)
-    valid.sort((a, b) => a.score - b.score);
-    const reranked = valid.slice(0, TOP_N).map((e, i) => ({
-      ...e,
-      rank: i + 1, // 1-indexed
-    }));
-
-    return { config, entries: reranked, skipped };
-  });
 }
 
 export function calculateAggregateScores(
-  problems: ProblemResult[]
-): LeaderboardResult {
-  const allSkipped = problems.flatMap((p) => p.skipped);
+  rawProblems: RawProblemData[],
+  hideUnder5us: boolean,
+  topN: number
+): AggregateEntry[] {
+  // Filter and re-rank each problem
+  const problems = rawProblems.map(({ config, entries }) => {
+    let valid = entries;
+    if (hideUnder5us) {
+      valid = valid.filter((e) => e.score >= MIN_TIME);
+    }
+    // Sort by score ascending (fastest first), take top 20 for scoring
+    valid = [...valid].sort((a, b) => a.score - b.score);
+    const reranked = valid.slice(0, TOP_N).map((e, i) => ({
+      ...e,
+      rank: i + 1,
+    }));
+    return { config, entries: reranked };
+  });
 
   // Build map: user_name -> { problemName -> best entry }
   const userEntries = new Map<
@@ -126,7 +99,7 @@ export function calculateAggregateScores(
     }
   }
 
-  const problemNames = PROBLEMS.map((p) => p.name);
+  const problemNames = rawProblems.map((p) => p.config.name);
   const aggregates: AggregateEntry[] = [];
 
   for (const [userName, scoreMap] of userEntries) {
@@ -137,7 +110,6 @@ export function calculateAggregateScores(
     for (const name of problemNames) {
       const data = scoreMap.get(name);
       if (data) {
-        // Display rank is 1-indexed, formula uses 0-indexed (rank - 1)
         const displayRank = data.entry.rank;
         const formulaRank = displayRank - 1;
         const pts = data.config.maxPoints * (1 - formulaRank / TOP_N);
@@ -169,12 +141,10 @@ export function calculateAggregateScores(
     return a.latestSubmission.localeCompare(b.latestSubmission);
   });
 
-  const entries = aggregates.slice(0, 10).map((entry, i) => ({
+  return aggregates.slice(0, topN).map((entry, i) => ({
     ...entry,
     rank: i + 1,
   }));
-
-  return { entries, skipped: allSkipped };
 }
 
 export function getProblemConfigs(): ProblemConfig[] {
