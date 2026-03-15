@@ -3,17 +3,6 @@
 import { useState } from "react";
 import { AggregateEntry, ProblemConfig } from "@/lib/scoring";
 
-const RANK_ACCENTS: Record<number, string> = {
-  1: "border-l-[#5eead4]",
-  2: "border-l-[#999]",
-  3: "border-l-[#d97706]",
-};
-
-const RANK_COLORS: Record<number, string> = {
-  1: "text-[#5eead4]",
-  2: "text-[#999]",
-  3: "text-[#d97706]",
-};
 
 function formatTime(seconds: number): string {
   if (seconds < 1e-3) {
@@ -52,9 +41,6 @@ export default function Leaderboard({
         {/* Rows */}
         {entries.map((entry) => {
           const isOpen = expanded === entry.user_name;
-          const accent =
-            RANK_ACCENTS[entry.rank] ?? "border-l-transparent";
-          const rankColor = RANK_COLORS[entry.rank] ?? "text-[#444]";
 
           return (
             <div key={entry.user_name}>
@@ -62,13 +48,11 @@ export default function Leaderboard({
                 onClick={() =>
                   setExpanded(isOpen ? null : entry.user_name)
                 }
-                className={`flex items-center px-4 py-3 border-l-2 ${accent} cursor-pointer transition-colors hover:bg-[#1a1d23] ${
+                className={`flex items-center px-4 py-3 cursor-pointer transition-colors hover:bg-[#1a1d23] ${
                   isOpen ? "bg-[#1a1d23]" : ""
                 } ${entry.rank < entries.length ? "border-b border-[#1e1e1e]" : ""}`}
               >
-                <span
-                  className={`w-12 text-center shrink-0 font-bold text-sm ${rankColor}`}
-                >
+                <span className="w-12 text-center shrink-0 font-bold text-sm text-[#555]">
                   {String(entry.rank).padStart(2, "0")}
                 </span>
                 <span className="flex-1 text-sm text-[#d4d4d4]">
