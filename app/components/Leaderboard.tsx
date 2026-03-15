@@ -658,7 +658,7 @@ export default function Leaderboard({
       }}>
         <div style={{ width: isMobile ? "calc(100vw + 2px)" : 450 }}>
           <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-            <div style={{ padding: "14px 16px 10px 16px" }}>
+            <div style={{ padding: "calc(14px + env(safe-area-inset-top, 0px)) 16px 10px 16px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T }}>
                 <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Leaderboard
               </div>
@@ -725,7 +725,7 @@ export default function Leaderboard({
               fontSize: 9,
               fontWeight: 700,
               color: c.textFaint,
-              padding: "0 16px 8px 16px",
+              padding: "0 16px calc(8px + env(safe-area-inset-bottom, 0px)) 16px",
               transition: T,
             }}>
               This website and its creator have no official affiliation with GPU MODE or AMD.

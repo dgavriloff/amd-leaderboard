@@ -13,6 +13,10 @@ export const metadata: Metadata = {
     "Combined leaderboard for AMD GPU Mode kernel optimization challenges on MI355X",
 };
 
+export const viewport = {
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
