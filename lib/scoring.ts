@@ -1,6 +1,6 @@
 export interface RankingEntry {
   user_name: string;
-  score: number;
+  score: number; // runtime (geometric mean)
   rank: number;
   submission_time: string;
   submission_count: number;
@@ -12,11 +12,17 @@ export interface ProblemConfig {
   maxPoints: number;
 }
 
+export interface ProblemDetail {
+  rank: number; // 0-indexed rank used in formula
+  time: number; // raw runtime from API
+  points: number;
+}
+
 export interface AggregateEntry {
   rank: number;
   user_name: string;
-  problemScores: Record<string, number>; // points per problem
-  aggregate: number; // sum of points
+  problems: Record<string, ProblemDetail | null>;
+  aggregate: number;
   latestSubmission: string;
 }
 
@@ -57,17 +63,14 @@ export async function fetchAllLeaderboards(): Promise<ProblemResult[]> {
   );
 }
 
-function calculatePoints(apiRank: number, maxPoints: number): number {
-  // API rank is 1-indexed, formula uses 0-indexed
-  const rank = apiRank - 1;
-  return maxPoints * (1 - rank / TOP_N);
-}
-
 export function calculateAggregateScores(
   problems: ProblemResult[]
 ): AggregateEntry[] {
   // Build map: user_name -> { problemName -> best entry }
-  const userEntries = new Map<string, Map<string, { entry: RankingEntry; config: ProblemConfig }>>();
+  const userEntries = new Map<
+    string,
+    Map<string, { entry: RankingEntry; config: ProblemConfig }>
+  >();
 
   for (const problem of problems) {
     for (const entry of problem.entries) {
@@ -76,7 +79,6 @@ export function calculateAggregateScores(
       }
       const userMap = userEntries.get(entry.user_name)!;
       const existing = userMap.get(problem.config.name);
-      // Keep best (lowest) rank per problem per user
       if (!existing || entry.rank < existing.entry.rank) {
         userMap.set(problem.config.name, { entry, config: problem.config });
       }
@@ -87,34 +89,39 @@ export function calculateAggregateScores(
   const aggregates: AggregateEntry[] = [];
 
   for (const [userName, scoreMap] of userEntries) {
-    const problemScores: Record<string, number> = {};
+    const problemDetails: Record<string, ProblemDetail | null> = {};
     let total = 0;
     let latestTime = "";
 
     for (const name of problemNames) {
       const data = scoreMap.get(name);
       if (data) {
-        const pts = calculatePoints(data.entry.rank, data.config.maxPoints);
-        problemScores[name] = pts;
+        // API rank is 1-indexed, formula rank is 0-indexed
+        const formulaRank = data.entry.rank - 1;
+        const pts = data.config.maxPoints * (1 - formulaRank / TOP_N);
+        problemDetails[name] = {
+          rank: formulaRank,
+          time: data.entry.score,
+          points: pts,
+        };
         total += pts;
         if (data.entry.submission_time > latestTime) {
           latestTime = data.entry.submission_time;
         }
       } else {
-        problemScores[name] = 0;
+        problemDetails[name] = null;
       }
     }
 
     aggregates.push({
       rank: 0,
       user_name: userName,
-      problemScores,
+      problems: problemDetails,
       aggregate: total,
       latestSubmission: latestTime,
     });
   }
 
-  // Sort descending (higher = better), tiebreak by earliest latest submission
   aggregates.sort((a, b) => {
     if (b.aggregate !== a.aggregate) return b.aggregate - a.aggregate;
     return a.latestSubmission.localeCompare(b.latestSubmission);

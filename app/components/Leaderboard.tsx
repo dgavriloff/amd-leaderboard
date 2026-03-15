@@ -15,6 +15,16 @@ const RANK_COLORS: Record<number, string> = {
   3: "text-[#d97706]",
 };
 
+function formatTime(seconds: number): string {
+  if (seconds < 1e-3) {
+    return `${(seconds * 1e6).toFixed(2)} us`;
+  }
+  if (seconds < 1) {
+    return `${(seconds * 1e3).toFixed(2)} ms`;
+  }
+  return `${seconds.toFixed(4)} s`;
+}
+
 export default function Leaderboard({
   entries,
   problemConfigs,
@@ -34,9 +44,8 @@ export default function Leaderboard({
         <div className="flex items-center border-b border-[#252525] text-[10px] text-[#555] uppercase tracking-wider px-4 py-2.5">
           <span className="w-12 text-center shrink-0">#</span>
           <span className="flex-1">Player</span>
-          <span className="w-28 text-right">
+          <span className="w-28 text-right text-[#444]">
             Score
-            <span className="text-[#333] ml-1">/{maxAggregate}</span>
           </span>
         </div>
 
@@ -65,8 +74,9 @@ export default function Leaderboard({
                 <span className="flex-1 text-sm text-[#d4d4d4]">
                   {entry.user_name}
                 </span>
-                <span className="w-28 text-right text-sm text-white font-bold tabular-nums">
+                <span className="w-28 text-right text-xs text-[#555] tabular-nums">
                   {entry.aggregate.toFixed(1)}
+                  <span className="text-[#333]">/{maxAggregate}</span>
                 </span>
                 <span
                   className={`ml-3 text-[#555] text-xs transition-transform ${
@@ -83,41 +93,30 @@ export default function Leaderboard({
                   isOpen ? "max-h-60" : "max-h-0"
                 }`}
               >
-                <div className="bg-[#161819] border-t border-[#252525] px-4 py-3 border-b border-[#1e1e1e]">
-                  <div className="grid grid-cols-3 gap-4 ml-12">
+                <div className="bg-[#161819] border-t border-[#252525] px-4 py-4 border-b border-[#1e1e1e]">
+                  <div className="grid grid-cols-3 gap-6 ml-12">
                     {problemConfigs.map((p) => {
-                      const pts = entry.problemScores[p.name] ?? 0;
-                      const pct = pts / p.maxPoints;
+                      const detail = entry.problems[p.name];
                       return (
                         <div key={p.name}>
-                          <div className="text-[10px] text-[#555] uppercase tracking-wider mb-1">
+                          <div className="text-[10px] text-[#555] uppercase tracking-wider mb-2">
                             {p.name}
                           </div>
-                          <div className="flex items-baseline gap-1.5">
-                            <span
-                              className={`text-sm font-bold tabular-nums ${
-                                pts > 0
-                                  ? pct >= 0.9
-                                    ? "text-[#5eead4]"
-                                    : pct >= 0.7
-                                      ? "text-[#d4d4d4]"
-                                      : "text-[#777]"
-                                  : "text-[#333]"
-                              }`}
-                            >
-                              {pts > 0 ? pts.toFixed(1) : "---"}
-                            </span>
-                            <span className="text-[10px] text-[#333]">
-                              /{p.maxPoints}
-                            </span>
-                          </div>
-                          {/* Score bar */}
-                          <div className="mt-1.5 h-px bg-[#252525] w-full">
-                            <div
-                              className="h-px bg-[#5eead4] transition-all duration-300"
-                              style={{ width: `${pct * 100}%` }}
-                            />
-                          </div>
+                          {detail ? (
+                            <>
+                              <div className="text-sm text-[#d4d4d4] font-bold tabular-nums">
+                                {formatTime(detail.time)}
+                              </div>
+                              <div className="text-xs text-[#555] mt-1 tabular-nums">
+                                rank {detail.rank}
+                                <span className="text-[#333] ml-2">
+                                  {detail.points.toFixed(1)} pts
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-sm text-[#333]">---</div>
+                          )}
                         </div>
                       );
                     })}
@@ -129,7 +128,7 @@ export default function Leaderboard({
         })}
       </div>
       <div className="mt-4 flex items-center justify-between text-[10px] text-[#333] uppercase tracking-wider">
-        <span>Score = MaxPoints * (1 - rank/20)</span>
+        <span>Score = MaxPoints * (1 - rank/20), rank 0-indexed</span>
         <span>Fetched {fetchedAt} / revalidates 60s</span>
       </div>
     </div>
