@@ -197,6 +197,11 @@ export default function Leaderboard({
 
   const c = dark ? themes.dark : themes.light;
 
+  // Set body background for safe area
+  useEffect(() => {
+    document.body.style.background = dark ? "#000000" : "#ffffff";
+  }, [dark]);
+
   const allEntries = useMemo(
     () => calculateAggregateScores(rawProblems, hideUnder5us, 20),
     [rawProblems, hideUnder5us]
@@ -484,6 +489,12 @@ export default function Leaderboard({
                   else { setLightBg(pick(lightImages)); }
                   setDark(next);
                   localStorage.setItem("theme", next ? "dark" : "light");
+                  // Reload on Safari mobile so safe area color updates
+                  const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+                  if (isMobile && isSafari) {
+                    window.location.reload();
+                    return;
+                  }
                   setTimeout(() => setThemeSwitching(false), 800);
                 }}
                 style={{
