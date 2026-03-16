@@ -563,7 +563,8 @@ export default function Leaderboard({
             width: effectiveIndex !== null ? 224 : 0,
             overflow: "hidden",
             opacity: effectiveIndex !== null ? 1 : 0,
-            transition: "width 300ms ease, opacity 250ms ease",
+            transition: "width 300ms ease, opacity 250ms ease, margin-left 300ms ease",
+            marginLeft: effectiveIndex !== null ? 0 : -12,
           }}
         >
           {displayEntry && (
@@ -654,9 +655,10 @@ export default function Leaderboard({
         right: 0,
         display: "flex",
         justifyContent: "center",
+        padding: "0 12px",
         zIndex: 1,
       }}>
-        <div style={{ width: isMobile ? "calc(100vw - 24px)" : 450 }}>
+        <div style={{ width: isMobile ? "100%" : 448 }}>
           <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
             <div style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T }}>
@@ -678,9 +680,10 @@ export default function Leaderboard({
         right: 0,
         display: "flex",
         justifyContent: "center",
+        padding: "0 12px",
         zIndex: 1,
       }}>
-        <div style={{ width: isMobile ? "calc(100vw - 24px)" : 450 }}>
+        <div style={{ width: isMobile ? "100%" : 448 }}>
           <GlassCard c={c} ready={ready} style={{ borderBottom: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
             <div style={{
               display: "flex",
