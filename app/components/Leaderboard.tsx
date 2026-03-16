@@ -22,13 +22,14 @@ function pick<T>(arr: T[]): T | undefined {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_DESKTOP = 10;
+const PAGE_SIZE_MOBILE = 5;
 
 const themes = {
   light: {
-    glass: "rgba(255,255,255,0.65)",
-    glassHover: "rgba(255,255,255,0.75)",
-    glassActive: "rgba(255,255,255,0.8)",
+    glass: "rgba(255,255,255,0.45)",
+    glassHover: "rgba(255,255,255,0.55)",
+    glassActive: "rgba(255,255,255,0.6)",
     border: "rgba(0,0,0,0.15)",
     separator: "rgba(0,0,0,0.08)",
     text: "#000000",
@@ -41,9 +42,9 @@ const themes = {
     fallbackBg: "#e8e8e8",
   },
   dark: {
-    glass: "rgba(0,0,0,0.5)",
-    glassHover: "rgba(0,0,0,0.6)",
-    glassActive: "rgba(0,0,0,0.65)",
+    glass: "rgba(0,0,0,0.4)",
+    glassHover: "rgba(0,0,0,0.5)",
+    glassActive: "rgba(0,0,0,0.55)",
     border: "rgba(255,255,255,0.15)",
     separator: "rgba(255,255,255,0.08)",
     text: "#f0f0f0",
@@ -201,8 +202,9 @@ export default function Leaderboard({
     [rawProblems, hideUnder5us]
   );
 
-  const totalPages = Math.max(1, Math.ceil(allEntries.length / PAGE_SIZE));
-  const entries = allEntries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pageSize = isMobile ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
+  const totalPages = Math.max(1, Math.ceil(allEntries.length / pageSize));
+  const entries = allEntries.slice(page * pageSize, (page + 1) * pageSize);
 
   const maxAggregate = problemConfigs.reduce((sum, p) => sum + p.maxPoints, 0);
   const effectiveIndex = selectedIndex !== null && selectedIndex < entries.length ? selectedIndex : null;
@@ -240,7 +242,7 @@ export default function Leaderboard({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "80px 12px 56px 12px",
+        padding: "68px 12px 68px 12px",
         overflow: "auto",
         background: c.fallbackBg,
         fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
@@ -344,7 +346,7 @@ export default function Leaderboard({
             </div>
 
             {/* Rows */}
-            <div style={{ minHeight: PAGE_SIZE * 41 }}>
+            <div style={{ minHeight: pageSize * 41 }}>
             {entries.map((entry, idx) => {
               const isSelected = effectiveIndex === idx;
               const isHovered = hovered === entry.user_name;
