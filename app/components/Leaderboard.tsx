@@ -733,7 +733,7 @@ export default function Leaderboard({
                 {problemConfigs.map((p) => {
                   const detail = displayEntry.problems[p.name];
                   return (
-                    <div key={p.name} style={{ minHeight: 34 }}>
+                    <div key={p.name}>
                       <a
                         href={`https://www.gpumode.com/leaderboard/${p.id}`}
                         target="_blank"
@@ -743,23 +743,25 @@ export default function Leaderboard({
                       >
                         {p.name} <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="10" height="10" style={{ display: "inline", verticalAlign: "middle" }}><path d="M3.5 8.5l5-5M4.5 3.5h4v4" /></svg>
                       </a>
-                      {detail ? (
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
-                          <span style={{ fontSize: 12, color: c.text, transition: T }}>
-                            #{detail.rank}
-                          </span>
-                          <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
-                          <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>
-                            {formatTime(detail.time)}
-                          </span>
-                          <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
-                          <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>
-                            {detail.points.toFixed(1)}
-                          </span>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 12, color: c.textFaint, transition: T, lineHeight: "18px" }}>---</div>
-                      )}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
+                        {detail ? (
+                          <>
+                            <span style={{ fontSize: 12, color: c.text, transition: T }}>
+                              #{detail.rank}
+                            </span>
+                            <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                            <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>
+                              {formatTime(detail.time)}
+                            </span>
+                            <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                            <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>
+                              {detail.points.toFixed(1)}
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: 12, color: c.textFaint, transition: T }}>---</span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
