@@ -549,7 +549,9 @@ export default function Leaderboard({
                 color: c.textMuted,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
-                padding: "8px 16px",
+                padding: "9px 16px",
+                minHeight: 34,
+                boxSizing: "border-box",
                 transition: T,
               }}
             >
@@ -729,7 +731,7 @@ export default function Leaderboard({
                 {problemConfigs.map((p) => {
                   const detail = displayEntry.problems[p.name];
                   return (
-                    <div key={p.name}>
+                    <div key={p.name} style={{ minHeight: 34 }}>
                       <a
                         href={`https://www.gpumode.com/leaderboard/${p.id}`}
                         target="_blank"
@@ -754,7 +756,7 @@ export default function Leaderboard({
                           </span>
                         </div>
                       ) : (
-                        <div style={{ fontSize: 12, color: c.textFaint, transition: T }}>---</div>
+                        <div style={{ fontSize: 12, color: c.textFaint, transition: T, lineHeight: "18px" }}>---</div>
                       )}
                     </div>
                   );
