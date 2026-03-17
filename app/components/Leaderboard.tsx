@@ -450,6 +450,8 @@ export default function Leaderboard({
         overflow: "auto",
         background: c.fallbackBg,
         fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+        userSelect: "none",
+        WebkitUserSelect: "none",
       }}
     >
       {/* Skip navigation link */}
@@ -535,7 +537,7 @@ export default function Leaderboard({
         gap: 12,
       }}>
         {/* Leaderboard */}
-        <div id="leaderboard-table" style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, userSelect: "none", overflow: "hidden" }}>
+        <div id="leaderboard-table" style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, overflow: "hidden" }}>
           <GlassCard c={c} ready={ready}>
             {/* Column header */}
             <div
