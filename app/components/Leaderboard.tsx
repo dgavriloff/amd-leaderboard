@@ -35,7 +35,7 @@ const themes = {
     text: "#000000",
     textMuted: "#444444",
     textFaint: "#777777",
-    btnActive: "rgba(255,255,255,0.7)",
+    btnActive: "rgba(0,0,0,0.12)",
     btnActiveText: "#000000",
     footerText: "rgba(255,255,255,0.85)",
     footerTextHover: "#ffffff",
@@ -62,6 +62,7 @@ type Theme = (typeof themes)["light"];
 
 const T = "background-color 600ms, color 600ms, border-color 600ms";
 const ROW_T = "background-color 150ms, color 150ms, transform 100ms ease-out";
+const BTN_T = "background-color 150ms, color 150ms, border-color 600ms";
 
 // --- Static styles extracted to constants ---
 const glassBlurStyle: React.CSSProperties = {
@@ -714,7 +715,7 @@ export default function Leaderboard({
                     background: closeHovered ? c.glassHover : "transparent",
                     fontSize: 12,
                     cursor: "pointer",
-                    transition: T,
+                    transition: BTN_T,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -915,7 +916,7 @@ export default function Leaderboard({
                     background: faqCloseHovered ? c.glassHover : "transparent",
                     fontSize: 12,
                     cursor: "pointer",
-                    transition: T,
+                    transition: BTN_T,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
