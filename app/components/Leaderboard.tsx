@@ -37,8 +37,8 @@ const themes = {
     textFaint: "#777777",
     btnActive: "rgba(0,0,0,0.12)",
     btnActiveText: "#000000",
-    footerText: "rgba(255,255,255,0.85)",
-    footerTextHover: "#ffffff",
+    footerText: "rgba(0,0,0,0.5)",
+    footerTextHover: "rgba(0,0,0,0.8)",
     fallbackBg: "#e8e8e8",
   },
   dark: {
@@ -853,7 +853,7 @@ export default function Leaderboard({
             </nav>
             <p style={{
               textAlign: "center",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 700,
               color: c.textFaint,
               padding: "0 16px max(8px, env(safe-area-inset-bottom)) 16px",
