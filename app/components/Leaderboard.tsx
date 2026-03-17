@@ -551,9 +551,7 @@ export default function Leaderboard({
                 color: c.textMuted,
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
-                padding: "9px 16px",
-                minHeight: 34,
-                boxSizing: "border-box",
+                padding: "10px 16px 9px 16px",
                 transition: T,
               }}
             >
