@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RawProblemData,
   ProblemConfig,
@@ -58,76 +58,223 @@ const themes = {
   },
 };
 
+type Theme = (typeof themes)["light"];
+
 const T = "background-color 600ms, color 600ms, border-color 600ms";
 const ROW_T = "background-color 150ms, color 150ms, transform 100ms ease-out";
 
-function GlassCard({
+// --- Static styles extracted to constants ---
+const glassBlurStyle: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  height: "200%",
+  backdropFilter: "blur(12px) saturate(1.4)",
+  WebkitBackdropFilter: "blur(12px) saturate(1.4)",
+  maskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 50%)",
+  WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 50%)",
+  pointerEvents: "none",
+  zIndex: 0,
+  transform: "translateZ(0)",
+};
+
+const glassEdgeStyle: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: -2,
+  height: 4,
+  backdropFilter: "blur(4px) brightness(1.1)",
+  WebkitBackdropFilter: "blur(4px) brightness(1.1)",
+  pointerEvents: "none",
+  zIndex: 0,
+  transform: "translateZ(0)",
+};
+
+const glassContentStyle: React.CSSProperties = {
+  position: "relative",
+  zIndex: 1,
+};
+
+const bgImageBase: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  zIndex: 0,
+};
+
+// --- Memoized GlassCard ---
+const GlassCard = memo(function GlassCard({
   children,
   c,
   style,
 }: {
   children: React.ReactNode;
-  c: (typeof themes)["light"];
+  c: Theme;
   ready?: boolean;
   style?: React.CSSProperties;
 }) {
+  const outerStyle = useMemo<React.CSSProperties>(() => ({
+    position: "relative",
+    border: `1px solid ${c.border}`,
+    borderRadius: 12,
+    overflow: "hidden",
+    transform: "translateZ(0)",
+    willChange: "transform",
+    contain: "layout style paint",
+    ...style,
+  }), [c.border, style]);
+
+  const tintStyle = useMemo<React.CSSProperties>(() => ({
+    position: "absolute",
+    inset: 0,
+    background: c.glass,
+    pointerEvents: "none",
+    zIndex: 0,
+  }), [c.glass]);
+
   return (
-    <div
-      style={{
-        position: "relative",
-        borderTop: `1px solid ${c.border}`,
-        borderBottom: `1px solid ${c.border}`,
-        borderLeft: `1px solid ${c.border}`,
-        borderRight: `1px solid ${c.border}`,
-        borderRadius: 12,
-        overflow: "hidden",
-        transform: "translateZ(0)",
-        willChange: "transform",
-        contain: "layout style paint",
-        ...style,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          height: "200%",
-          backdropFilter: "blur(24px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
-          maskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 50%)",
-          WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 50%)",
-          pointerEvents: "none",
-          zIndex: 0,
-          transform: "translateZ(0)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: -2,
-          height: 4,
-          backdropFilter: "blur(4px) brightness(1.1)",
-          WebkitBackdropFilter: "blur(4px) brightness(1.1)",
-          pointerEvents: "none",
-          zIndex: 0,
-          transform: "translateZ(0)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: c.glass,
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-      <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+    <div style={outerStyle}>
+      <div style={glassBlurStyle} />
+      <div style={glassEdgeStyle} />
+      <div style={tintStyle} />
+      <div style={glassContentStyle}>{children}</div>
     </div>
   );
-}
+});
+
+// --- Memoized row component with local hover/press state ---
+const LeaderboardRow = memo(function LeaderboardRow({
+  entry,
+  idx,
+  isSelected,
+  isLast,
+  isMobile,
+  pageFade,
+  maxAggregate,
+  c,
+  problemConfigs,
+  onSelect,
+  onHover,
+  rowRef,
+}: {
+  entry: { user_name: string; rank: number; aggregate: number; problems: Record<string, { rank: number; time: number; points: number } | null> };
+  idx: number;
+  isSelected: boolean;
+  isLast: boolean;
+  isMobile: boolean;
+  pageFade: boolean;
+  maxAggregate: number;
+  c: Theme;
+  problemConfigs: ProblemConfig[];
+  onSelect: (idx: number, isSelected: boolean) => void;
+  onHover: (name: string | null) => void;
+  rowRef: (el: HTMLDivElement | null) => void;
+}) {
+  const [localHovered, setLocalHovered] = useState(false);
+  const [localPressed, setLocalPressed] = useState(false);
+  const showDrawer = isMobile && isSelected;
+
+  const handleClick = useCallback(() => {
+    onSelect(idx, isSelected);
+  }, [idx, isSelected, onSelect]);
+
+  const rowStyle = useMemo<React.CSSProperties>(() => ({
+    display: "flex",
+    alignItems: "center",
+    padding: "10px 16px",
+    cursor: "pointer",
+    background: isSelected ? c.glassActive : localHovered ? c.glassHover : "transparent",
+    borderBottom: (!isLast && !showDrawer) ? `1px solid ${c.separator}` : "none",
+    transform: localPressed ? "scale(0.985)" : "scale(1)",
+    transition: ROW_T,
+    contain: "layout style paint",
+  }), [isSelected, localHovered, localPressed, isLast, showDrawer, c]);
+
+  return (
+    <div ref={rowRef}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={isMobile ? isSelected : undefined}
+        aria-label={`${entry.user_name}, rank ${entry.rank}, score ${entry.aggregate.toFixed(1)} out of ${maxAggregate}`}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}
+        onMouseEnter={() => { if (!isMobile) { setLocalHovered(true); onHover(entry.user_name); } }}
+        onMouseLeave={() => { if (!isMobile) { setLocalHovered(false); setLocalPressed(false); onHover(null); } }}
+        onMouseDown={() => setLocalPressed(true)}
+        onMouseUp={() => setLocalPressed(false)}
+        onTouchStart={() => setLocalPressed(true)}
+        onTouchEnd={() => setLocalPressed(false)}
+        style={rowStyle}
+      >
+        <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
+          {String(entry.rank).padStart(2, "0")}
+        </span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {entry.user_name}
+        </span>
+        <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
+          {entry.aggregate.toFixed(1)}
+          <span style={{ color: c.textFaint, transition: T }}>/{maxAggregate}</span>
+        </span>
+      </div>
+      {/* Mobile inline drawer */}
+      {isMobile && (
+        <div
+          role="region"
+          aria-label={`Details for ${entry.user_name}`}
+          aria-hidden={!isSelected}
+          style={{
+            maxHeight: isSelected ? 300 : 0,
+            overflow: "hidden",
+            transition: "max-height 250ms ease-out",
+          }}
+        >
+        <div style={{
+          padding: "12px 16px 12px 56px",
+          background: c.glassActive,
+          borderBottom: !isLast ? `1px solid ${c.separator}` : "none",
+          transition: T,
+        }}>
+          {problemConfigs.map((p) => {
+            const detail = entry.problems?.[p.name];
+            return (
+              <div key={p.name} style={{ marginBottom: 10 }}>
+                <a
+                  href={`https://www.gpumode.com/leaderboard/${p.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover-link"
+                  style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, transition: T, fontWeight: 700, textDecoration: "none", display: "block" }}
+                >
+                  {p.name}
+                </a>
+                {detail ? (
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 12, color: c.text, transition: T }}>#{detail.rank}</span>
+                    <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                    <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>{formatTime(detail.time)}</span>
+                    <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                    <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>{detail.points.toFixed(1)}</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: c.textFaint, transition: T }}>---</div>
+                )}
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, transition: T }}>Total</div>
+          <div style={{ fontSize: 14, color: c.text, fontWeight: 700, fontVariantNumeric: "tabular-nums", transition: T }}>
+            {entry.aggregate.toFixed(1)}
+            <span style={{ color: c.textFaint, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
+          </div>
+        </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export default function Leaderboard({
   rawProblems,
@@ -155,13 +302,14 @@ export default function Leaderboard({
   const [pageFade, setPageFade] = useState(true);
   const [hovered, setHovered] = useState<string | null>(null);
   const [closeHovered, setCloseHovered] = useState(false);
-  const [pressed, setPressed] = useState<string | null>(null);
   const [themeSwitching, setThemeSwitching] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [faqCloseHovered, setFaqCloseHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const faqCloseRef = useRef<HTMLButtonElement>(null);
+  const faqTriggerRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 700);
@@ -229,18 +377,68 @@ export default function Leaderboard({
 
   useEffect(() => {
     if (!mounted || !lightLoaded || !darkLoaded) return;
-    // Wait for glass to composite, then start fade
     const t1 = setTimeout(() => setOverlayFading(true), 600);
-    // Remove from DOM after fade completes
     const t2 = setTimeout(() => setOverlayDone(true), 1400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [mounted, lightLoaded, darkLoaded]);
+
+  // Focus management for FAQ modal
+  useEffect(() => {
+    if (faqOpen && faqCloseRef.current) {
+      faqCloseRef.current.focus();
+    }
+  }, [faqOpen]);
+
+  // Trap focus inside FAQ modal and handle Escape
+  useEffect(() => {
+    if (!faqOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFaqOpen(false);
+        faqTriggerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [faqOpen]);
+
+  // Stable callbacks for row interaction
+  const handleRowSelect = useCallback((idx: number, wasSelected: boolean) => {
+    if (isMobile && !wasSelected) {
+      const rowEl = rowRefs.current.get(idx);
+      if (rowEl && containerRef.current) {
+        const rowTop = rowEl.getBoundingClientRect().top;
+        requestAnimationFrame(() => {
+          const newRowTop = rowEl.getBoundingClientRect().top;
+          containerRef.current!.scrollBy(0, newRowTop - rowTop);
+        });
+      }
+    }
+    setSelectedIndex(wasSelected ? null : idx);
+    if (wasSelected) setHovered(null);
+  }, [isMobile]);
+
+  const handleRowHover = useCallback((name: string | null) => {
+    setHovered(name);
+  }, []);
+
+  const handlePageNext = useCallback(() => {
+    setPageFade(false);
+    setTimeout(() => {
+      setPage((prev) => (prev + 1) % totalPages);
+      requestAnimationFrame(() => {
+        setPageFade(true);
+      });
+    }, 300);
+  }, [totalPages]);
 
   if (!mounted) return null;
 
   return (
     <div
       ref={containerRef}
+      role="main"
+      aria-label="AMD + GPU Mode Phase 1 Leaderboard"
       style={{
         position: "fixed",
         inset: 0,
@@ -253,69 +451,76 @@ export default function Leaderboard({
         fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
       }}
     >
-      {/* Background images */}
+      {/* Skip navigation link */}
+      <a
+        href="#leaderboard-table"
+        style={{
+          position: "absolute",
+          left: -9999,
+          top: "auto",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          zIndex: 200,
+        }}
+        onFocus={(e) => { e.currentTarget.style.left = "12px"; e.currentTarget.style.top = "12px"; e.currentTarget.style.width = "auto"; e.currentTarget.style.height = "auto"; e.currentTarget.style.padding = "8px 16px"; e.currentTarget.style.background = c.glass; e.currentTarget.style.color = c.text; e.currentTarget.style.borderRadius = "8px"; }}
+        onBlur={(e) => { e.currentTarget.style.left = "-9999px"; e.currentTarget.style.width = "1px"; e.currentTarget.style.height = "1px"; }}
+      >
+        Skip to leaderboard
+      </a>
+
+      {/* Background images — decorative, hidden from screen readers */}
       {lightBg && (
         <div
+          aria-hidden="true"
           style={{
-            position: "absolute",
-            inset: 0,
+            ...bgImageBase,
             backgroundImage: `url(${lightBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
             opacity: lightLoaded && !dark ? 1 : 0,
             transition: "opacity 800ms",
-            zIndex: 0,
           }}
         />
       )}
       {darkBg && (
         <div
+          aria-hidden="true"
           style={{
-            position: "absolute",
-            inset: 0,
+            ...bgImageBase,
             backgroundImage: `url(${darkBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
             opacity: darkLoaded && dark ? 1 : 0,
             transition: "opacity 800ms",
-            zIndex: 0,
           }}
         />
       )}
-      {/* Fallback if no images */}
       {!lightBg && !darkBg && (
         <div
+          aria-hidden="true"
           style={{
-            position: "absolute",
-            inset: 0,
+            ...bgImageBase,
             background: c.fallbackBg,
             transition: "background-color 300ms",
-            zIndex: 0,
           }}
         />
       )}
-      {/* If only one theme has images, show fallback for the other */}
       {lightBg && !darkBg && (
         <div
+          aria-hidden="true"
           style={{
-            position: "absolute",
-            inset: 0,
+            ...bgImageBase,
             background: themes.dark.fallbackBg,
             opacity: dark ? 1 : 0,
             transition: "opacity 600ms",
-            zIndex: 0,
           }}
         />
       )}
       {!lightBg && darkBg && (
         <div
+          aria-hidden="true"
           style={{
-            position: "absolute",
-            inset: 0,
+            ...bgImageBase,
             background: themes.light.fallbackBg,
             opacity: dark ? 0 : 1,
             transition: "opacity 600ms",
-            zIndex: 0,
           }}
         />
       )}
@@ -329,10 +534,12 @@ export default function Leaderboard({
         gap: 12,
       }}>
         {/* Leaderboard */}
-        <div style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, userSelect: "none", overflow: "hidden" }}>
+        <div id="leaderboard-table" style={{ width: isMobile ? "calc(100vw - 24px)" : 448, flexShrink: 0, userSelect: "none", overflow: "hidden" }}>
           <GlassCard c={c} ready={ready}>
-            {/* Header */}
+            {/* Column header */}
             <div
+              role="row"
+              aria-label="Column headers"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -345,122 +552,38 @@ export default function Leaderboard({
                 transition: T,
               }}
             >
-              <span style={{ width: 40, textAlign: "center", flexShrink: 0 }}>#</span>
-              <span style={{ flex: 1 }}>Competitor</span>
-              <span style={{ width: 96, textAlign: "right" }}>Score</span>
+              <span role="columnheader" style={{ width: 40, textAlign: "center", flexShrink: 0 }}>#</span>
+              <span role="columnheader" style={{ flex: 1 }}>Competitor</span>
+              <span role="columnheader" style={{ width: 96, textAlign: "right" }}>Score</span>
             </div>
 
             {/* Rows */}
-            <div style={{ minHeight: pageSize * 41 }}>
-            {entries.map((entry, idx) => {
-              const isSelected = effectiveIndex === idx;
-              const isHovered = hovered === entry.user_name;
-              const isLast = idx === entries.length - 1;
-              const showDrawer = isMobile && isSelected && selectedEntry;
-
-              return (
-                <div key={entry.user_name} ref={(el) => { if (el) rowRefs.current.set(idx, el); }}>
-                  <div
-                    onClick={() => {
-                      if (isMobile && !isSelected) {
-                        const rowEl = rowRefs.current.get(idx);
-                        if (rowEl && containerRef.current) {
-                          const rowTop = rowEl.getBoundingClientRect().top;
-                          requestAnimationFrame(() => {
-                            const newRowTop = rowEl.getBoundingClientRect().top;
-                            containerRef.current!.scrollBy(0, newRowTop - rowTop);
-                          });
-                        }
-                      }
-                      setSelectedIndex(isSelected ? null : idx);
-                      if (isSelected) setHovered(null);
-                    }}
-                    onMouseEnter={() => { if (!isMobile) setHovered(entry.user_name); }}
-                    onMouseLeave={() => { if (!isMobile) { setHovered(null); setPressed(null); } }}
-                    onMouseDown={() => setPressed(entry.user_name)}
-                    onMouseUp={() => setPressed(null)}
-                    onTouchStart={() => setPressed(entry.user_name)}
-                    onTouchEnd={() => setPressed(null)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "10px 16px",
-                      cursor: "pointer",
-                      background: isSelected ? c.glassActive : isHovered ? c.glassHover : "transparent",
-                      borderBottom: (!isLast && !showDrawer) ? `1px solid ${c.separator}` : "none",
-                      transform: pressed === entry.user_name ? "scale(0.985)" : "scale(1)",
-                      transition: ROW_T,
-                    }}
-                  >
-                    <span style={{ width: 40, textAlign: "center", flexShrink: 0, fontSize: 14, color: c.textMuted, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
-                      {String(entry.rank).padStart(2, "0")}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {entry.user_name}
-                    </span>
-                    <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
-                      {entry.aggregate.toFixed(1)}
-                      <span style={{ color: c.textFaint, transition: T }}>/{maxAggregate}</span>
-                    </span>
-                  </div>
-                  {/* Mobile inline drawer */}
-                  {isMobile && (
-                    <div style={{
-                      maxHeight: isSelected ? 300 : 0,
-                      overflow: "hidden",
-                      transition: "max-height 250ms ease-out",
-                    }}>
-                    <div style={{
-                      padding: "12px 16px 12px 56px",
-                      background: c.glassActive,
-                      borderBottom: !isLast ? `1px solid ${c.separator}` : "none",
-                      transition: T,
-                    }}>
-                      {problemConfigs.map((p) => {
-                        const detail = entry.problems?.[p.name];
-                        return (
-                          <div key={p.name} style={{ marginBottom: 10 }}>
-                            <a
-                              href={`https://www.gpumode.com/leaderboard/${p.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4, transition: T, fontWeight: 700, textDecoration: "none", display: "block" }}
-                              onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
-                              onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
-                            >
-                              {p.name}
-                            </a>
-                            {detail ? (
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
-                                <span style={{ fontSize: 12, color: c.text, transition: T }}>#{detail.rank}</span>
-                                <span style={{ color: c.textFaint, transition: T }}>|</span>
-                                <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>{formatTime(detail.time)}</span>
-                                <span style={{ color: c.textFaint, transition: T }}>|</span>
-                                <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>{detail.points.toFixed(1)}</span>
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: 12, color: c.textFaint, transition: T }}>---</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, transition: T }}>Total</div>
-                      <div style={{ fontSize: 14, color: c.text, fontWeight: 700, fontVariantNumeric: "tabular-nums", transition: T }}>
-                        {entry.aggregate.toFixed(1)}
-                        <span style={{ color: c.textFaint, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
-                      </div>
-                    </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            <div role="list" aria-label="Leaderboard entries" style={{ minHeight: pageSize * 41 }}>
+            {entries.map((entry, idx) => (
+              <LeaderboardRow
+                key={entry.user_name}
+                entry={entry}
+                idx={idx}
+                isSelected={effectiveIndex === idx}
+                isLast={idx === entries.length - 1}
+                isMobile={isMobile}
+                pageFade={pageFade}
+                maxAggregate={maxAggregate}
+                c={c}
+                problemConfigs={problemConfigs}
+                onSelect={handleRowSelect}
+                onHover={handleRowHover}
+                rowRef={(el) => { if (el) rowRefs.current.set(idx, el); }}
+              />
+            ))}
             </div>
 
             {/* Toggle buttons */}
-            <div style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${c.separator}`, transition: T }}>
+            <div role="toolbar" aria-label="Leaderboard controls" style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${c.separator}`, transition: T }}>
               <button
                 onClick={() => setHideUnder5us(!hideUnder5us)}
+                aria-pressed={hideUnder5us}
+                aria-label={hideUnder5us ? "Showing entries with time >= 5 microseconds. Click to show all." : "Showing all entries. Click to hide entries under 5 microseconds."}
                 style={{
                   flex: 1,
                   padding: "8px 0",
@@ -481,6 +604,7 @@ export default function Leaderboard({
                 hide &lt;5us
               </button>
               <button
+                aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
                 onClick={() => {
                   if (themeSwitching) return;
                   setThemeSwitching(true);
@@ -489,7 +613,6 @@ export default function Leaderboard({
                   else { setLightBg(pick(lightImages)); }
                   setDark(next);
                   localStorage.setItem("theme", next ? "dark" : "light");
-                  // Reload on Safari mobile so safe area color updates
                   const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
                   if (isMobile && isSafari) {
                     window.location.reload();
@@ -516,7 +639,7 @@ export default function Leaderboard({
                 }}
               >
                 {dark ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="5" />
                     <line x1="12" y1="1" x2="12" y2="3" />
                     <line x1="12" y1="21" x2="12" y2="23" />
@@ -528,25 +651,14 @@ export default function Leaderboard({
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                   </svg>
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
               </button>
               <button
-                onClick={() => {
-                  setPageFade(false);
-                  setTimeout(() => {
-                    setPage((page + 1) % totalPages);
-                    // New content renders with pageFade still false (opacity 0)
-                    // Then fade it in on next frame
-                    requestAnimationFrame(() => {
-                      requestAnimationFrame(() => {
-                        setPageFade(true);
-                      });
-                    });
-                  }, 300);
-                }}
+                onClick={handlePageNext}
+                aria-label={`Page ${page + 1} of ${totalPages}. Click to go to next page.`}
                 style={{
                   flex: 1,
                   padding: "8px 0",
@@ -571,6 +683,7 @@ export default function Leaderboard({
 
         {/* Detail card — desktop only */}
         {!isMobile && <div
+          aria-live="polite"
           style={{
             flexShrink: 0,
             width: effectiveIndex !== null ? 224 : 0,
@@ -590,6 +703,7 @@ export default function Leaderboard({
                   onClick={() => { setSelectedIndex(null); setCloseHovered(false); setHovered(null); }}
                   onMouseEnter={() => setCloseHovered(true)}
                   onMouseLeave={() => setCloseHovered(false)}
+                  aria-label="Close detail panel"
                   style={{
                     width: 36,
                     borderTop: "none",
@@ -619,9 +733,8 @@ export default function Leaderboard({
                         href={`https://www.gpumode.com/leaderboard/${p.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="hover-link"
                         style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, transition: T, fontWeight: 700, textDecoration: "none", display: "block" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
                       >
                         {p.name} ↗
                       </a>
@@ -630,11 +743,11 @@ export default function Leaderboard({
                           <span style={{ fontSize: 12, color: c.text, transition: T }}>
                             #{detail.rank}
                           </span>
-                          <span style={{ color: c.textFaint, transition: T }}>|</span>
+                          <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
                           <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>
                             {formatTime(detail.time)}
                           </span>
-                          <span style={{ color: c.textFaint, transition: T }}>|</span>
+                          <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
                           <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>
                             {detail.points.toFixed(1)}
                           </span>
@@ -661,7 +774,7 @@ export default function Leaderboard({
       </div>
 
       {/* Header */}
-      <div style={{
+      <header style={{
         position: "fixed",
         top: -1,
         left: 0,
@@ -674,19 +787,19 @@ export default function Leaderboard({
         <div style={{ width: isMobile ? "100%" : 448 }}>
           <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
             <div style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T }}>
+              <h1 style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T, margin: 0 }}>
                 <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Leaderboard
-              </div>
-              <div style={{ fontSize: 10, color: c.textFaint, marginTop: 3, textTransform: "uppercase", letterSpacing: "0.05em", transition: T }}>
+              </h1>
+              <p style={{ fontSize: 10, color: c.textFaint, marginTop: 3, marginBottom: 0, textTransform: "uppercase", letterSpacing: "0.05em", transition: T }}>
                 Aggregated score from 3 kernel leaderboards
-              </div>
+              </p>
             </div>
           </GlassCard>
         </div>
-      </div>
+      </header>
 
       {/* Footer */}
-      <div style={{
+      <footer style={{
         position: "fixed",
         bottom: -1,
         left: 0,
@@ -698,7 +811,7 @@ export default function Leaderboard({
       }}>
         <div style={{ width: isMobile ? "100%" : 448 }}>
           <GlassCard c={c} ready={ready} style={{ borderBottom: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
-            <div style={{
+            <nav aria-label="Footer links" style={{
               display: "flex",
               justifyContent: "center",
               gap: 24,
@@ -711,17 +824,19 @@ export default function Leaderboard({
                 href="https://drive.google.com/file/d/15abWjTlpEbN-JwYA8WAY-mKlpg9yZYzY/view?usp=drive_link"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="hover-link"
                 style={{ color: c.textMuted, textDecoration: "none", transition: T }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
               >
                 Rules
               </a>
               <span
+                ref={faqTriggerRef}
+                role="button"
+                tabIndex={0}
                 onClick={() => setFaqOpen(true)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFaqOpen(true); } }}
+                className="hover-link"
                 style={{ color: c.textMuted, cursor: "pointer", transition: T }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
               >
                 FAQ
               </span>
@@ -729,30 +844,34 @@ export default function Leaderboard({
                 href="https://github.com/dgavriloff/amd-leaderboard"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="hover-link"
                 style={{ color: c.textMuted, textDecoration: "none", transition: T }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = c.textMuted)}
               >
                 GitHub
               </a>
-            </div>
-            <div style={{
+            </nav>
+            <p style={{
               textAlign: "center",
               fontSize: 9,
               fontWeight: 700,
               color: c.textFaint,
               padding: "0 16px max(8px, env(safe-area-inset-bottom)) 16px",
               transition: T,
+              margin: 0,
             }}>
               This website and its creator have no official affiliation with GPU MODE or AMD.
-            </div>
+            </p>
           </GlassCard>
         </div>
-      </div>
+      </footer>
 
       {/* FAQ Modal */}
       <div
-        onClick={() => setFaqOpen(false)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Frequently Asked Questions"
+        aria-hidden={!faqOpen}
+        onClick={() => { setFaqOpen(false); faqTriggerRef.current?.focus(); }}
         style={{
           position: "fixed",
           inset: 0,
@@ -771,10 +890,7 @@ export default function Leaderboard({
           width: "100%",
           maxWidth: 420,
           background: dark ? "rgba(20,20,20,0.92)" : "rgba(255,255,255,0.92)",
-          borderTop: `1px solid ${c.border}`,
-          borderBottom: `1px solid ${c.border}`,
-          borderLeft: `1px solid ${c.border}`,
-          borderRight: `1px solid ${c.border}`,
+          border: `1px solid ${c.border}`,
           borderRadius: 12,
           overflow: "hidden",
           transition: T,
@@ -784,9 +900,11 @@ export default function Leaderboard({
                   FAQ
                 </span>
                 <button
-                  onClick={() => { setFaqOpen(false); setFaqCloseHovered(false); }}
+                  ref={faqCloseRef}
+                  onClick={() => { setFaqOpen(false); setFaqCloseHovered(false); faqTriggerRef.current?.focus(); }}
                   onMouseEnter={() => setFaqCloseHovered(true)}
                   onMouseLeave={() => setFaqCloseHovered(false)}
+                  aria-label="Close FAQ"
                   style={{
                     width: 36,
                     borderTop: "none",
@@ -809,57 +927,57 @@ export default function Leaderboard({
               </div>
               <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 20 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     What is this?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     GPU MODE is running a kernel optimization challenge on AMD MI355X with three separate problems: MXFP4 GEMM, MLA Decode, and MXFP4 MoE.
                     Each has its own leaderboard, but the top 10 winners are determined by a combined aggregate score across all three.
                     This site pulls from all three leaderboards and calculates that combined ranking so you can see where you actually stand.
-                  </div>
+                  </p>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     How is the score calculated?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     Each kernel problem has a maximum point value: MXFP4 GEMM (1,000), MLA Decode (1,250), MXFP4 MoE (1,500).
                     Your score per problem = MaxPoints &times; (1 - rank/20). Your total is the sum of all three.
-                  </div>
+                  </p>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     What does rank 1 = rank 0 mean?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     The leaderboard displays ranks starting at 1, but the scoring formula uses 0-indexed ranks.
                     So displayed rank 1 uses rank 0 in the formula, giving full points. Rank 20 (displayed) uses rank 19, giving 5% of max points.
-                  </div>
+                  </p>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     Why are some submissions hidden?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     Submissions with runtime under 5 microseconds are filtered out by default as likely harness hacks.
                     You can toggle this with the &quot;hide &lt;5us&quot; button.
-                  </div>
+                  </p>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     How often does the data refresh?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     The page revalidates every 60 seconds, pulling fresh data from the GPU Mode API.
-                  </div>
+                  </p>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, transition: T }}>
+                  <h2 style={{ fontSize: 11, fontWeight: 700, color: c.text, marginBottom: 4, marginTop: 0, transition: T }}>
                     What GPU is this for?
-                  </div>
-                  <div style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T }}>
+                  </h2>
+                  <p style={{ fontSize: 11, color: c.textMuted, lineHeight: 1.6, transition: T, margin: 0 }}>
                     All benchmarks run on the AMD Instinct MI355X. Only MI355X rankings are shown.
-                  </div>
+                  </p>
                 </div>
               </div>
           </div>
@@ -868,6 +986,7 @@ export default function Leaderboard({
       {/* Loading overlay — covers everything, fades out once ready */}
       {!overlayDone && (
         <div
+          aria-hidden="true"
           style={{
             position: "fixed",
             inset: 0,
