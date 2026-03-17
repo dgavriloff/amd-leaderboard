@@ -737,7 +737,7 @@ export default function Leaderboard({
                         className="hover-link"
                         style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, transition: T, fontWeight: 700, textDecoration: "none", display: "block" }}
                       >
-                        {p.name} ↗
+                        {p.name} <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="10" height="10" style={{ display: "inline", verticalAlign: "middle" }}><path d="M3.5 8.5l5-5M4.5 3.5h4v4" /></svg>
                       </a>
                       {detail ? (
                         <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
