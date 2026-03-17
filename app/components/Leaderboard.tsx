@@ -691,8 +691,7 @@ export default function Leaderboard({
             flexShrink: 0,
             width: effectiveIndex !== null ? 224 : 0,
             overflow: "hidden",
-            opacity: effectiveIndex !== null ? 1 : 0,
-            transition: "width 300ms ease, opacity 250ms ease, margin-left 300ms ease",
+            transition: "width 300ms ease, margin-left 300ms ease",
             marginLeft: effectiveIndex !== null ? 0 : -12,
           }}
         >
