@@ -215,9 +215,9 @@ const LeaderboardRow = memo(function LeaderboardRow({
         <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: c.text, opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {entry.user_name}
         </span>
-        <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.textMuted, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
+        <span style={{ width: 96, textAlign: "right", fontSize: 12, color: c.text, fontVariantNumeric: "tabular-nums", opacity: pageFade ? 1 : 0, transition: `${T}, opacity 300ms ease-in-out` }}>
           {entry.aggregate.toFixed(1)}
-          <span style={{ color: c.textFaint, transition: T }}>/{maxAggregate}</span>
+          <span style={{ color: c.textMuted, transition: T }}>/{maxAggregate}</span>
         </span>
       </div>
       {/* Mobile inline drawer */}
@@ -268,7 +268,7 @@ const LeaderboardRow = memo(function LeaderboardRow({
           <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, transition: T }}>Total</div>
           <div style={{ fontSize: 14, color: c.text, fontWeight: 700, fontVariantNumeric: "tabular-nums", transition: T }}>
             {entry.aggregate.toFixed(1)}
-            <span style={{ color: c.textFaint, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
+            <span style={{ color: c.textMuted, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
           </div>
         </div>
         </div>
@@ -763,7 +763,7 @@ export default function Leaderboard({
                 </div>
                 <div style={{ fontSize: 14, color: c.text, fontWeight: 700, fontVariantNumeric: "tabular-nums", transition: T }}>
                   {displayEntry.aggregate.toFixed(1)}
-                  <span style={{ color: c.textFaint, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
+                  <span style={{ color: c.textMuted, fontWeight: 400, transition: T }}>/{maxAggregate}</span>
                 </div>
               </div>
             </GlassCard>
