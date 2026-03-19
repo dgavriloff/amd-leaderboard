@@ -740,16 +740,16 @@ export default function Leaderboard({
                       >
                         {p.name} <svg aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="10" height="10" style={{ display: "inline", verticalAlign: "middle" }}><path d="M3.5 8.5l5-5M4.5 3.5h4v4" /></svg>
                       </a>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums" }}>
-                        <span style={{ fontSize: 12, color: detail ? c.text : "transparent", transition: T }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, fontVariantNumeric: "tabular-nums", visibility: detail ? "visible" : "hidden" }}>
+                        <span style={{ fontSize: 12, color: c.text, transition: T }}>
                           #{detail ? detail.rank : "00"}
                         </span>
-                        <span aria-hidden="true" style={{ color: detail ? c.textFaint : "transparent", transition: T }}>|</span>
-                        <span style={{ fontSize: 12, color: detail ? c.text : "transparent", fontWeight: 700, transition: T }}>
+                        <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                        <span style={{ fontSize: 12, color: c.text, fontWeight: 700, transition: T }}>
                           {detail ? formatTime(detail.time) : "000.00 us"}
                         </span>
-                        <span aria-hidden="true" style={{ color: detail ? c.textFaint : "transparent", transition: T }}>|</span>
-                        <span style={{ fontSize: 11, color: detail ? c.textFaint : "transparent", transition: T }}>
+                        <span aria-hidden="true" style={{ color: c.textFaint, transition: T }}>|</span>
+                        <span style={{ fontSize: 11, color: c.textFaint, transition: T }}>
                           {detail ? detail.points.toFixed(1) : "0000.0"}
                         </span>
                       </div>
