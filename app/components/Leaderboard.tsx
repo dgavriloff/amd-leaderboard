@@ -296,6 +296,10 @@ export default function Leaderboard({
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "dark") setDark(true);
+    const savedTab = localStorage.getItem("activeTab");
+    if (savedTab === "leaderboard" || savedTab === "geomean") setActiveTab(savedTab);
+    const savedHeight = localStorage.getItem("geomeanHeight");
+    if (savedHeight) setGeomeanHeight(savedHeight);
     setMounted(true);
   }, []);
 
@@ -306,6 +310,10 @@ export default function Leaderboard({
   const [themeSwitching, setThemeSwitching] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
   const [faqCloseHovered, setFaqCloseHovered] = useState(false);
+  const [activeTab, setActiveTab] = useState<"leaderboard" | "geomean">("leaderboard");
+  const [geomeanInput, setGeomeanInput] = useState("");
+  const [geomeanHeight, setGeomeanHeight] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -371,6 +379,23 @@ export default function Leaderboard({
 
   // Use lastSelectedEntry for rendering the detail card so it persists during close animation
   const displayEntry = selectedEntry ?? lastSelectedEntry;
+
+  const geomeanResult = useMemo(() => {
+    if (!geomeanInput.trim()) return null;
+    const regex = /⏱\s*([\d.]+)\s*±\s*[\d.]+\s*(µs|us|ms|s)/g;
+    const times: number[] = [];
+    let match;
+    while ((match = regex.exec(geomeanInput)) !== null) {
+      let val = parseFloat(match[1]);
+      const unit = match[2];
+      if (unit === "ms") val *= 1000;
+      else if (unit === "s") val *= 1e6;
+      times.push(val);
+    }
+    if (times.length === 0) return null;
+    const logSum = times.reduce((sum, t) => sum + Math.log(t), 0);
+    return { value: Math.exp(logSum / times.length), count: times.length };
+  }, [geomeanInput]);
 
   const ready = true;
   const [overlayFading, setOverlayFading] = useState(false);
@@ -529,7 +554,7 @@ export default function Leaderboard({
       )}
 
       {/* Main content */}
-      <div style={{
+      {activeTab === "leaderboard" ? <div style={{
         position: "relative",
         zIndex: 1,
         display: "flex",
@@ -730,7 +755,7 @@ export default function Leaderboard({
                 {problemConfigs.map((p) => {
                   const detail = displayEntry.problems[p.name];
                   return (
-                    <div key={p.name}>
+                    <div key={p.name} style={{ minHeight: 34 }}>
                       <a
                         href={`https://www.gpumode.com/leaderboard/${p.id}`}
                         target="_blank"
@@ -769,7 +794,73 @@ export default function Leaderboard({
             </GlassCard>
           )}
         </div>}
-      </div>
+      </div> : (
+        <div style={{
+          position: "relative",
+          zIndex: 1,
+          width: isMobile ? "calc(100vw - 24px)" : 448,
+        }}>
+          <GlassCard c={c} ready={ready}>
+            <div style={{ padding: 16 }}>
+              <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, transition: T }}>
+                Paste benchmark output
+              </div>
+              <textarea
+                value={geomeanInput}
+                onChange={(e) => setGeomeanInput(e.target.value)}
+                ref={textareaRef}
+                onMouseUp={() => {
+                  if (textareaRef.current) {
+                    const h = textareaRef.current.offsetHeight + "px";
+                    setGeomeanHeight(h);
+                    localStorage.setItem("geomeanHeight", h);
+                  }
+                }}
+                placeholder={"seed: 4217; qseqlen: 1; kvseqlen: 1024; batchsize: 4\n ⏱ 11.8 ± 0.02 µs\n ⚡ 11.2 µs 🐌 17.4 µs\n..."}
+                style={{
+                  width: "100%",
+                  height: geomeanHeight ?? (isMobile ? undefined : "clamp(250px, 60vh, 600px)"),
+                  minHeight: isMobile ? 200 : undefined,
+                  maxHeight: 800,
+                  background: dark ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.06)",
+                  border: `1px solid ${c.separator}`,
+                  borderRadius: 6,
+                  color: c.text,
+                  fontSize: 11,
+                  fontFamily: "inherit",
+                  padding: 10,
+                  resize: "vertical",
+                  outline: "none",
+                  transition: T,
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+            <div style={{ borderTop: `1px solid ${c.separator}`, padding: 16, transition: T }}>
+              {geomeanResult ? (
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", transition: T }}>
+                    Geomean ({geomeanResult.count} samples)
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: c.text, fontVariantNumeric: "tabular-nums", transition: T }}>
+                    {geomeanResult.value < 1
+                      ? `${(geomeanResult.value * 1e3).toFixed(3)} ns`
+                      : geomeanResult.value < 1000
+                        ? `${geomeanResult.value.toFixed(3)} µs`
+                        : geomeanResult.value < 1e6
+                          ? `${(geomeanResult.value / 1000).toFixed(3)} ms`
+                          : `${(geomeanResult.value / 1e6).toFixed(4)} s`}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 10, color: c.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center", transition: T }}>
+                  {geomeanInput.trim() ? "No timing data found" : "Waiting for input"}
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        </div>
+      )}
 
       {/* Header */}
       <header style={{
@@ -784,13 +875,54 @@ export default function Leaderboard({
       }}>
         <div style={{ width: isMobile ? "100%" : 448 }}>
           <GlassCard c={c} ready={ready} style={{ borderTop: "none", borderLeft: isMobile ? "none" : undefined, borderRight: isMobile ? "none" : undefined, borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-            <div style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: 10 }}>
+            <div style={{ paddingTop: "max(14px, env(safe-area-inset-top))", paddingLeft: 16, paddingRight: 16, paddingBottom: 8, textAlign: "center" }}>
               <h1 style={{ fontSize: 13, fontWeight: 700, color: c.text, transition: T, margin: 0 }}>
-                <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Leaderboard
+                <span style={{ color: c.textMuted, transition: T }}>AMD</span> + <span style={{ color: c.textMuted, transition: T }}>GPU Mode</span> Phase 1 Competition
               </h1>
-              <p style={{ fontSize: 10, color: c.textFaint, marginTop: 3, marginBottom: 0, textTransform: "uppercase", letterSpacing: "0.05em", transition: T }}>
-                Aggregated score from 3 kernel leaderboards
-              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${c.separator}`, transition: T }}>
+              <button
+                onClick={() => { setActiveTab("leaderboard"); localStorage.setItem("activeTab", "leaderboard"); }}
+                style={{
+                  flex: 1,
+                  padding: "8px 0",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  borderTop: "none",
+                  borderBottom: "none",
+                  borderLeft: "none",
+                  borderRight: `1px solid ${c.separator}`,
+                  background: activeTab === "leaderboard" ? c.btnActive : "transparent",
+                  color: activeTab === "leaderboard" ? c.btnActiveText : c.textMuted,
+                  cursor: "pointer",
+                  transition: T,
+                  fontFamily: "inherit",
+                }}
+              >
+                Leaderboard
+              </button>
+              <button
+                onClick={() => { setActiveTab("geomean"); localStorage.setItem("activeTab", "geomean"); }}
+                style={{
+                  flex: 1,
+                  padding: "8px 0",
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  borderTop: "none",
+                  borderBottom: "none",
+                  borderLeft: "none",
+                  borderRight: "none",
+                  background: activeTab === "geomean" ? c.btnActive : "transparent",
+                  color: activeTab === "geomean" ? c.btnActiveText : c.textMuted,
+                  cursor: "pointer",
+                  transition: T,
+                  fontFamily: "inherit",
+                }}
+              >
+                Geomean Calculator
+              </button>
             </div>
           </GlassCard>
         </div>
