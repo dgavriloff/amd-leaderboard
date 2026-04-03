@@ -882,7 +882,8 @@ export default function Leaderboard({
             </div>
             <div style={{ display: "flex", alignItems: "stretch", borderTop: `1px solid ${c.separator}`, transition: T }}>
               <button
-                onClick={() => { setActiveTab("leaderboard"); localStorage.setItem("activeTab", "leaderboard"); }}
+                onClick={activeTab === "leaderboard" ? undefined : () => { setActiveTab("leaderboard"); localStorage.setItem("activeTab", "leaderboard"); }}
+                disabled={activeTab === "leaderboard"}
                 style={{
                   flex: 1,
                   padding: "8px 0",
@@ -895,7 +896,8 @@ export default function Leaderboard({
                   borderRight: `1px solid ${c.separator}`,
                   background: activeTab === "leaderboard" ? c.btnActive : "transparent",
                   color: activeTab === "leaderboard" ? c.btnActiveText : c.textMuted,
-                  cursor: "pointer",
+                  cursor: activeTab === "leaderboard" ? "default" : "pointer",
+                  pointerEvents: activeTab === "leaderboard" ? "none" : "auto",
                   transition: T,
                   fontFamily: "inherit",
                 }}
@@ -903,7 +905,8 @@ export default function Leaderboard({
                 Leaderboard
               </button>
               <button
-                onClick={() => { setActiveTab("geomean"); localStorage.setItem("activeTab", "geomean"); }}
+                onClick={activeTab === "geomean" ? undefined : () => { setActiveTab("geomean"); localStorage.setItem("activeTab", "geomean"); }}
+                disabled={activeTab === "geomean"}
                 style={{
                   flex: 1,
                   padding: "8px 0",
@@ -916,7 +919,8 @@ export default function Leaderboard({
                   borderRight: "none",
                   background: activeTab === "geomean" ? c.btnActive : "transparent",
                   color: activeTab === "geomean" ? c.btnActiveText : c.textMuted,
-                  cursor: "pointer",
+                  cursor: activeTab === "geomean" ? "default" : "pointer",
+                  pointerEvents: activeTab === "geomean" ? "none" : "auto",
                   transition: T,
                   fontFamily: "inherit",
                 }}
